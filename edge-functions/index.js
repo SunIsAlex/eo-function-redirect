@@ -83,6 +83,16 @@ async function getTokenData(env) {
 
 // 主处理函数，拦截所有请求
 export async function onRequest({ request, env }) {
+  if (new URL(request.url).searchParams.has('debug')) {
+    return new Response(JSON.stringify({
+      hasKV:       !!env.KV,
+      hasToken:    !!env.EO_API_TOKEN,
+      hasDomain:   !!env.EO_DOMAIN,
+      kvType:      typeof env.KV,
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
   try {
     const url      = new URL(request.url);
     const domain   = env.EO_DOMAIN;
