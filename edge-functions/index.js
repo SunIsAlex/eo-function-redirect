@@ -49,9 +49,9 @@ async function getTokenData(env) {
   const domain   = env.EO_DOMAIN;
 
   // 尝试读 KV 缓存
-  if (env.KV) {
+  if (KV) {
     try {
-      const cached = await env.KV.get(KV_KEY);
+      const cached = await KV.get(KV_KEY);
       if (cached) {
         const data = JSON.parse(cached);
         const age  = Math.floor(Date.now() / 1000) - data.cachedAt;
@@ -68,9 +68,9 @@ async function getTokenData(env) {
   const tokenData = await fetchToken(apiToken, domain);
 
   // 写入 KV 缓存
-  if (env.KV) {
+  if (KV) {
     try {
-      await env.KV.put(KV_KEY, JSON.stringify(tokenData), {
+      await KV.put(KV_KEY, JSON.stringify(tokenData), {
         expirationTtl: CACHE_TTL,
       });
     } catch (e) {
@@ -85,10 +85,10 @@ async function getTokenData(env) {
 export async function onRequest({ request, env }) {
   if (new URL(request.url).searchParams.has('debug')) {
     return new Response(JSON.stringify({
-      hasKV:       !!env.KV,
+      hasKV:       !!KV,
       hasToken:    !!env.EO_API_TOKEN,
       hasDomain:   !!env.EO_DOMAIN,
-      kvType:      typeof env.KV,
+      kvType:      typeof KV,
     }), {
       headers: { 'Content-Type': 'application/json' }
     });
