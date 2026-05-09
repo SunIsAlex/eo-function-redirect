@@ -165,6 +165,7 @@ function fallbackCopy(text, btn) {
     <p class="tip">微信内无法直接访问，请复制链接到浏览器打开</p>
     <div class="url" id="url">${targetUrl}</div>
     <button onclick="copyToClipboard('${targetUrl}', this)">
+    📋 复制链接
     </button>
   </div>
 </body>
