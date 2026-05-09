@@ -132,11 +132,39 @@ export async function onRequest({ request, env }) {
   </style>
 </head>
 <body>
+<script>
+function copyToClipboard(text, btn) {
+  // 方法一：现代 API（微信不支持）
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(function() { btn.textContent = '✅ 已复制！'; })
+      .catch(function() { fallbackCopy(text, btn); }); // 失败则降级
+  } else {
+    fallbackCopy(text, btn);
+  }
+}
+
+function fallbackCopy(text, btn) {
+  // 方法二：创建临时 textarea，execCommand 复制
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try {
+    document.execCommand('copy');
+    btn.textContent = '✅ 已复制！';
+  } catch (e) {
+    btn.textContent = '请手动复制上方链接';
+  }
+  document.body.removeChild(ta);
+}
+</script>
   <div class="box">
     <p class="tip">微信内无法直接访问，请复制链接到浏览器打开</p>
     <div class="url" id="url">${targetUrl}</div>
-    <button onclick="navigator.clipboard.writeText('${targetUrl}').then(()=>this.textContent='✅ 已复制！')">
-      📋 复制链接
+    <button onclick="copyToClipboard('${targetUrl}', this)">
     </button>
   </div>
 </body>
