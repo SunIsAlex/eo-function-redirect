@@ -1,0 +1,14 @@
+# .github/workflows/warmup.yml
+name: Warmup EO Function
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # 每小时
+  workflow_dispatch:
+
+jobs:
+  warmup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping
+        run: curl -s -o /dev/null -w "%{http_code}" https://go.sunisalex.org/
