@@ -11,4 +11,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping
-        run: curl -s -o /dev/null -w "%{http_code}" https://go.sunisalex.org/
+        run: curl -s -o /dev/null -w "%{http_code} -> %{redirect_url}" https://go.sunisalex.org/
