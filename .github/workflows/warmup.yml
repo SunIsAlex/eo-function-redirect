@@ -1,5 +1,4 @@
-# .github/workflows/warmup.yml
-name: Warmup EO Function
+name: Refresh EO Token
 
 on:
   schedule:
@@ -7,8 +6,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  warmup:
+  refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping
-        run: curl -s -o /dev/null -w "%{http_code} -> %{redirect_url}" https://go.sunisalex.org/
+      - name: Refresh token via Edge Function
+        run: |
+          response=$(curl -s -w "\n%{http_code}" \
+            "https://go.sunisalex.org/refresh?secret=${{ secrets.REFRESH_SECRET }}")
+          body=$(echo "$response" | head -n1)
+          code=$(echo "$response" | tail -n1)
+          echo "HTTP Status: $code"
+          echo "Response: $body"
+          if [ "$code" != "200" ]; then
+            echo "❌ Refresh failed"
+            exit 1
+          fi
+          echo "✅ Token refreshed successfully"
