@@ -7,10 +7,10 @@
   "headers": [{ "source": "/*", "headers": [
       { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
     ]},
-    { "source": "/api/url", "headers": [
+    { "source": "/api/url*", "headers": [
       { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
     ]},
-    { "source": "/refresh", "headers": [
+    { "source": "/refresh*", "headers": [
       { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
     ]}
   ]
