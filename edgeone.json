@@ -3,5 +3,16 @@
     { "source": "/api/url", "destination": "/api/url" },
     { "source": "/refresh", "destination": "/refresh" },
     { "source": "/**", "destination": "/index.html" }
+  ],
+  "headers": [
+    { "source": "/api/url", "headers": [
+      { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+    ]},
+    { "source": "/refresh", "headers": [
+      { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+    ]},
+    { "source": "/**", "headers": [
+      { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+    ]}
   ]
 }
