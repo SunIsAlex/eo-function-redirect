@@ -1,16 +1,30 @@
 /**
  * Edge Function: /api/url
- * 根据 path + qs 返回带 eo_token 的国内版跳转 URL
+ * 根据 subdomain 参数返回对应国内版的 eo_token 和 eo_time
+ * 前端自行拼接目标 URL
+ *
+ * 约定：subdomain 直接对应 EO Pages 项目名
+ *   axiomlab → axiomlab.zh-cn.edgeone.cool
+ *
+ * 请求示例：
+ *   GET /api/url?subdomain=axiomlab
+ *
+ * 响应示例：
+ *   { "domain": "axiomlab.zh-cn.edgeone.cool", "token": "xxx", "timestamp": 1234567890 }
  *
  * 环境变量：
  *   EO_API_TOKEN  EO Pages API Token
- *   EO_DOMAIN     国内版域名，如 axiomlab.zh-cn.edgeone.cool
  *
  * KV 绑定（变量名：KV）
+ *   key 格式：eo_token:<subdomain>
  */
 
-const KV_KEY    = 'eo_preview_token';
 const CACHE_TTL = 60 * 60 * 2;
+const CN_SUFFIX = '.zh-cn.edgeone.cool';
+
+function kvKey(subdomain) {
+  return 'eo_token:' + subdomain;
+}
 
 async function fetchToken(apiToken, domain) {
   const res = await fetch('https://pages-api.edgeone.ai/v1', {
@@ -30,38 +44,44 @@ async function fetchToken(apiToken, domain) {
   };
 }
 
-async function getTokenData(env) {
+async function getTokenData(apiToken, subdomain) {
+  const domain = subdomain + CN_SUFFIX;
+  const key    = kvKey(subdomain);
+
   if (KV) {
     try {
-      const cached = await KV.get(KV_KEY);
+      const cached = await KV.get(key);
       if (cached) {
         const data = JSON.parse(cached);
-        if (Math.floor(Date.now() / 1000) - data.cachedAt < CACHE_TTL) return data;
+        if (Math.floor(Date.now() / 1000) - data.cachedAt < CACHE_TTL) return { domain, ...data };
       }
     } catch (e) {}
   }
-  const tokenData = await fetchToken(env.EO_API_TOKEN, env.EO_DOMAIN);
+
+  const tokenData = await fetchToken(apiToken, domain);
+
   if (KV) {
-    try { await KV.put(KV_KEY, JSON.stringify(tokenData), { expirationTtl: CACHE_TTL }); }
+    try { await KV.put(key, JSON.stringify(tokenData), { expirationTtl: CACHE_TTL }); }
     catch (e) {}
   }
-  return tokenData;
+
+  return { domain, ...tokenData };
 }
 
 export async function onRequest({ request, env }) {
   const url       = new URL(request.url);
-  const path      = url.searchParams.get('path') || '/';
-  const qs        = url.searchParams.get('qs')   || '';
+  const subdomain = url.searchParams.get('subdomain');
+
+  if (!subdomain || !/^[a-z0-9-]+$/.test(subdomain)) {
+    return new Response(JSON.stringify({ error: '缺少或非法的 subdomain 参数' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
-    const tokenData = await getTokenData(env);
-    const eoUrl     = new URL(`https://${env.EO_DOMAIN}${path}`);
-
-    new URLSearchParams(qs).forEach((v, k) => eoUrl.searchParams.set(k, v));
-    eoUrl.searchParams.set('eo_token', tokenData.token);
-    eoUrl.searchParams.set('eo_time',  tokenData.timestamp);
-
-    return new Response(JSON.stringify({ url: eoUrl.toString() }), {
+    const { domain, token, timestamp } = await getTokenData(env.EO_API_TOKEN, subdomain);
+    return new Response(JSON.stringify({ domain, token, timestamp }), {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-store',
