@@ -15,7 +15,7 @@ html,body{height:100%;background:#0f0f0f}
 .text{color:#666;font-size:13px;font-family:sans-serif;letter-spacing:.05em}
 .err{color:#e55;font-size:12px;max-width:280px;text-align:center;display:none;line-height:1.6}
 
-/* 微信提示页，默认隐藏 */
+/* 微信提示 */
 .wechat{display:none;text-align:center;padding:28px 20px;background:#fff;
         border-radius:14px;box-shadow:0 2px 16px rgba(0,0,0,.08);
         max-width:320px;width:90%}
@@ -32,57 +32,53 @@ body.is-wechat .wechat{display:block}
 </head>
 <body>
 <div class="wrap">
-  <!-- 普通浏览器：loading 动画 -->
-  <div class="ring" id="ring"></div>
-  <span class="text" id="txt">正在跳转…</span>
+  <div class="ring"></div>
+  <span class="text">正在跳转…</span>
   <span class="err" id="err"></span>
-
-  <!-- 微信：复制提示框 -->
   <div class="wechat" id="wechat">
     <p class="tip">微信内无法直接访问<br>请复制链接到浏览器打开</p>
     <div class="url" id="wechat-url">获取链接中…</div>
     <button onclick="copyUrl(this)">📋 复制链接</button>
   </div>
 </div>
-
 <script>
 (function () {
   var isWechat = /MicroMessenger/i.test(navigator.userAgent);
   if (isWechat) document.body.classList.add('is-wechat');
 
-  var path = location.pathname;
-  var qs   = location.search;
-  var api  = '/api/url?path=' + encodeURIComponent(path)
-           + (qs ? '&qs=' + encodeURIComponent(qs) : '');
+  // 从当前域名截取 subdomain
+  // axiomlab.sunisalex.org → "axiomlab"
+  var subdomain = location.hostname.split('.')[0];
 
-  fetch(api)
+  fetch('/api/url?subdomain=' + encodeURIComponent(subdomain))
     .then(function (r) { return r.json(); })
     .then(function (d) {
-      if (!d.url) throw new Error(d.error || '未知错误');
+      if (d.error) throw new Error(d.error);
+
+      var target = new URL('https://' + d.domain + location.pathname + location.search);
+      target.searchParams.set('eo_token', d.token);
+      target.searchParams.set('eo_time',  d.timestamp);
+      var url = target.toString();
 
       if (isWechat) {
-        // 微信：展示可复制的链接
-        document.getElementById('wechat-url').textContent = d.url;
-        // 存到全局供 copyUrl 使用
-        window.__cnUrl = d.url;
+        document.getElementById('wechat-url').textContent = url;
+        window.__cnUrl = url;
       } else {
-        // 普通浏览器：直接跳转
-        window.location.replace(d.url);
+        window.location.replace(url);
       }
     })
     .catch(function (e) {
-      document.getElementById('ring').style.display = 'none';
-      document.getElementById('txt').textContent = '跳转失败';
+      document.querySelector('.ring').style.display = 'none';
+      document.querySelector('.text').textContent = '跳转失败';
       var el = document.getElementById('err');
       el.textContent = e.message;
       el.style.display = 'block';
-
       if (isWechat) {
         document.getElementById('wechat-url').textContent = '获取失败：' + e.message;
       }
     });
 
-  function copyUrl(btn) {
+  window.copyUrl = function (btn) {
     var text = window.__cnUrl || document.getElementById('wechat-url').textContent;
     var ta = document.createElement('textarea');
     ta.value = text;
@@ -97,10 +93,7 @@ body.is-wechat .wechat{display:block}
       btn.textContent = '请手动复制上方链接';
     }
     document.body.removeChild(ta);
-  }
-
-  // 暴露给 onclick
-  window.copyUrl = copyUrl;
+  };
 })();
 </script>
 </body>
