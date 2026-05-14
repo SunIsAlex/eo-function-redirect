@@ -13,5 +13,9 @@
     { "source": "/refresh*", "headers": [
       { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
     ]}
-  ]
+  ],
+  "cloudFunctions": {
+    "mainlandRegions": ["ap-beijing"],
+    "overseasRegions": ["ap-tokyo"]
+  }
 }
