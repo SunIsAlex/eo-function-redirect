@@ -14,20 +14,6 @@ html,body{height:100%;background:#0f0f0f}
 @keyframes spin{to{transform:rotate(360deg)}}
 .text{color:#666;font-size:13px;font-family:sans-serif;letter-spacing:.05em}
 .err{color:#e55;font-size:12px;max-width:280px;text-align:center;display:none;line-height:1.6}
-
-/* 微信提示 */
-.wechat{display:none;text-align:center;padding:28px 20px;background:#fff;
-        border-radius:14px;box-shadow:0 2px 16px rgba(0,0,0,.08);
-        max-width:320px;width:90%}
-.wechat .tip{color:#888;font-size:13px;margin-bottom:16px;line-height:1.5}
-.wechat .url{word-break:break-all;font-size:11px;background:#f7f7f7;padding:10px;
-             border-radius:8px;margin-bottom:16px;color:#555;text-align:left}
-.wechat button{background:#07c160;color:#fff;border:none;padding:13px;
-               border-radius:10px;font-size:15px;cursor:pointer;width:100%}
-body.is-wechat{background:#f5f5f5}
-body.is-wechat .ring,
-body.is-wechat .text{display:none}
-body.is-wechat .wechat{display:block}
 </style>
 </head>
 <body>
@@ -35,16 +21,9 @@ body.is-wechat .wechat{display:block}
   <div class="ring"></div>
   <span class="text">正在跳转…</span>
   <span class="err" id="err"></span>
-  <div class="wechat" id="wechat">
-    <p class="tip">微信内无法直接访问<br>请复制链接到浏览器打开</p>
-    <div class="url" id="wechat-url">获取链接中…</div>
-    <button onclick="copyUrl(this)">📋 复制链接</button>
-  </div>
 </div>
 <script>
 (function () {
-  var isWechat = /MicroMessenger/i.test(navigator.userAgent);
-  if (isWechat) document.body.classList.add('is-wechat');
 
   // 从当前域名截取 subdomain
   // axiomlab.sunisalex.org → "axiomlab"
@@ -60,12 +39,7 @@ body.is-wechat .wechat{display:block}
       target.searchParams.set('eo_time',  d.timestamp);
       var url = target.toString();
 
-      if (isWechat) {
-        document.getElementById('wechat-url').textContent = url;
-        window.__cnUrl = url;
-      } else {
-        window.location.replace(url);
-      }
+      window.location.replace(url);
     })
     .catch(function (e) {
       document.querySelector('.ring').style.display = 'none';
@@ -73,28 +47,7 @@ body.is-wechat .wechat{display:block}
       var el = document.getElementById('err');
       el.textContent = e.message;
       el.style.display = 'block';
-      if (isWechat) {
-        document.getElementById('wechat-url').textContent = '获取失败：' + e.message;
-      }
     });
-
-  window.copyUrl = function (btn) {
-    var text = window.__cnUrl || document.getElementById('wechat-url').textContent;
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    try {
-      document.execCommand('copy');
-      btn.textContent = '✅ 已复制！';
-    } catch (e) {
-      btn.textContent = '请手动复制上方链接';
-    }
-    document.body.removeChild(ta);
-  };
-})();
 </script>
 </body>
 </html>
